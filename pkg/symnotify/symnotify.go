@@ -5,16 +5,18 @@ package symnotify
 import (
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"os"
 	"path/filepath"
 	"time"
-
 	"github.com/fsnotify/fsnotify"
 )
 
 type Event = fsnotify.Event
 type Op = fsnotify.Op
+
+var debugOn bool = true
 
 const (
 	Create Op = fsnotify.Create
@@ -27,12 +29,17 @@ const (
 // Watcher is like fsnotify.Watcher but also notifies on changes to symlink targets
 type Watcher struct {
 	watcher *fsnotify.Watcher
-	added   map[string]bool
+}
+
+func debug(f string, x ...interface{}) {
+        if debugOn {
+                log.Printf(f, x...)
+        }
 }
 
 func NewWatcher() (*Watcher, error) {
 	w, err := fsnotify.NewWatcher()
-	return &Watcher{watcher: w, added: map[string]bool{}}, err
+	return &Watcher{watcher: w}, err
 }
 
 // Event returns the next event.
@@ -53,14 +60,17 @@ func (w *Watcher) EventTimeout(timeout time.Duration) (e Event, err error) {
 	case !ok:
 		return Event{}, io.EOF
 	case e.Op == Create:
+		debug("Create Event Detected for file e.Name %v",e.Name)
 		if info, err := os.Lstat(e.Name); err == nil {
 			if isSymlink(info) {
 				_ = w.watcher.Add(e.Name)
 			}
 		}
 	case e.Op == Remove:
+		debug("Remove Event Detected for file e.Name %v",e.Name)
 		w.watcher.Remove(e.Name)
 	case e.Op == Chmod:
+		debug("Chmod Event Detected for file e.Name %v",e.Name)
 		if info, err := os.Lstat(e.Name); err == nil {
 			if isSymlink(info) {
 				// Symlink target may have changed.
@@ -72,27 +82,26 @@ func (w *Watcher) EventTimeout(timeout time.Duration) (e Event, err error) {
 	return e, err
 }
 
-// Add a file to the watcher
+// Add dir,dir/files* to the watcher
 func (w *Watcher) Add(name string) error {
 	if err := w.watcher.Add(name); err != nil {
 		return err
 	}
-	w.added[name] = true // Explicitly added, don't auto-Remove
 
 	// Scan directories for existing symlinks, we wont' get a Create for those.
 	if infos, err := ioutil.ReadDir(name); err == nil {
-		for _, info := range infos {
-			if isSymlink(info) {
+        for _, info := range infos {
+		if isSymlink(info) {
+		debug("Add file to watcher %v",filepath.Join(name, info.Name()))
 				_ = w.watcher.Add(filepath.Join(name, info.Name()))
-			}
 		}
-	}
+	}	}
 	return nil
 }
 
 // Remove name from watcher
 func (w *Watcher) Remove(name string) error {
-	delete(w.added, name)
+	//delete(w.added, name)
 	return w.watcher.Remove(name)
 }
 
@@ -102,3 +111,4 @@ func (w *Watcher) Close() error { return w.watcher.Close() }
 func isSymlink(info os.FileInfo) bool {
 	return (info.Mode() & os.ModeSymlink) == os.ModeSymlink
 }
+
