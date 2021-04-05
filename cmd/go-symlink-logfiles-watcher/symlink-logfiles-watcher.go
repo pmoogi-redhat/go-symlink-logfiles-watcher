@@ -117,6 +117,8 @@ func main() {
 
         }
 	prometheus.Register(w.metrics)
+	
+	prometheus.Register(w.metrics)
 
 	symwatcher, err := symnotify.NewWatcher()
 	w.watcher = symwatcher
