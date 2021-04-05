@@ -109,14 +109,16 @@ func main() {
 	//Get new watcher
         w := &FileWatcher {
                 metrics: prometheus.NewCounterVec(prometheus.CounterOpts{
-                        Name: "goapp_input_status_total_bytes_logged",
-                        Help: "goapp total bytes logged to disk (log file) ",
+                        Name: "gofilewatcher_input_status_total_bytes_logged",
+                        Help: "gofilewatcher total bytes logged to disk (log file) ",
                 }, []string{"path"}),
                sizes: make(map[string]float64),
                added: make(map[string]bool),
 
         }
 	prometheus.Register(w.metrics)
+
+	defer prometheus.Register(w.metrics)
 
 	symwatcher, err := symnotify.NewWatcher()
 	w.watcher = symwatcher
@@ -129,7 +131,6 @@ func main() {
 	 w.watcher.Add(dir)
 
 	go w.Watch()
-
 	http.Handle("/metrics", promhttp.Handler())
 	http.ListenAndServe(listeningport, nil)
 }
