@@ -69,7 +69,8 @@ func (w *Watcher) EventTimeout(timeout time.Duration) (e Event, err error) {
 	case e.Op == Remove:
 		debug("Remove Event Detected for file e.Name %v",e.Name)
 		w.watcher.Remove(e.Name)
-	case e.Op == Chmod:
+		w.watcher.Add(e.Name)
+	case e.Op == Chmod || e.Op == Rename :
 		debug("Chmod Event Detected for file e.Name %v",e.Name)
 		if info, err := os.Lstat(e.Name); err == nil {
 			if isSymlink(info) {
