@@ -78,10 +78,6 @@ func (w FileWatcher) Watch( ) {
                 e, err := w.watcher.Event()
                 fatal(err)
                 debug("Event notified for e.Name %v for Event %v call w.Update", e.Name,e.Op)
-              //  w.Update(e.Name)
-
-
-                debug("Event notified for e.Name %v call w.Update", e.Name)
                 w.Update(e.Name)
         }
 }
