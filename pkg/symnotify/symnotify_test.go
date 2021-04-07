@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alanconway/trials/symnotify/pkg/symnotify"
+	"github.com/go-symlink-logfiles-watcher/pkg/symnotify"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
